@@ -1,26 +1,68 @@
-
-#include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgcodecs.hpp>
-
+#include <ctime>
+#include <filesystem>
 #include <iostream>
+#include <opencv2/objdetect.hpp>
+#include <opencv2/opencv.hpp>
 
 int main() {
-  std::string path = "imgs/dog_window.jpg";
-  std::string image_path = cv::samples::findFile(path);
-  cv::Mat img = imread(image_path, cv::IMREAD_COLOR);
+  cv::CascadeClassifier face_cascade;
+  // Especifique o caminho completo para o arquivo XML
+  std::string face_cascade_path =
+      "/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml";
 
-  if (img.empty()) {
-    std::cout << "Could not read the image: " << image_path << std::endl;
-    return 1;
+  if (!face_cascade.load(face_cascade_path)) {
+    std::cerr << "Erro: Não foi possível carregar o classificador de rostos."
+              << std::endl;
+    return -1;
   }
 
-  imshow("Display window", img);
-  int k = cv::waitKey(0); // Wait for a keystroke in the window
-
-  if (k == 's') {
-    imwrite("imgs/clone.jpg", img);
+  cv::VideoCapture cap(0);
+  if (!cap.isOpened()) {
+    std::cerr << "Erro: Não foi possível abrir a câmera." << std::endl;
+    return -1;
   }
 
+  int face_id = 0;
+  std::time_t last_time = std::time(0);
+
+  while (true) {
+    cv::Mat frame;
+    cap >> frame;
+
+    if (frame.empty()) {
+      std::cerr << "Erro: Não foi possível ler o frame." << std::endl;
+      break;
+    }
+
+    cv::flip(frame, frame, 1);
+    cv::Mat gray;
+    cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+
+    std::vector<cv::Rect> faces;
+    face_cascade.detectMultiScale(gray, faces, 1.1, 5, 0, cv::Size(30, 30));
+
+    for (const auto &face : faces) {
+      cv::rectangle(frame, face, cv::Scalar(255, 0, 0), 2);
+
+      cv::Mat face_roi = frame(face);
+
+      if (std::difftime(std::time(0), last_time) >= 1.5) {
+        last_time = std::time(0);
+        face_id++;
+        std::string file_path = "imgs/face_" + std::to_string(face_id) + ".jpg";
+        cv::imwrite(file_path, face_roi);
+        std::cout << "Rosto salvo como " << file_path << std::endl;
+      }
+    }
+
+    cv::imshow("Camera", frame);
+
+    if (cv::waitKey(1) == 'q') {
+      break;
+    }
+  }
+
+  cap.release();
+  cv::destroyAllWindows();
   return 0;
 }
