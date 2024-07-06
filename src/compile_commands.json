@@ -1,0 +1,15 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-I/usr/include/opencv4",
+      "-o",
+      "EXE",
+      "main.cpp"
+    ],
+    "directory": "/home/samuelhdmv/Documentos/face_print_cpp/src",
+    "file": "/home/samuelhdmv/Documentos/face_print_cpp/src/main.cpp",
+    "output": "/home/samuelhdmv/Documentos/face_print_cpp/src/EXE"
+  }
+]
